@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "type": "home",
+      "label": "글"
+    },
+    {
+      "type": "page",
+      "label": "소개",
+      "slug": "about"
+    }
+  ]
+}

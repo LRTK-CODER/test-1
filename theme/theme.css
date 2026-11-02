@@ -1,0 +1,181 @@
+/*
+ * 블로그 테마의 스타일 진입점이다. app/globals.css가 Tailwind와 함께 이 파일을 불러온다.
+ * 토큰(tokens.css)만 바꾸면 색, 글자, 둥글기가 바뀐다. 더 바꾸려면 컴포넌트를 고친다.
+ */
+@import "./tokens.css";
+
+/* 큰 전환은 빠르게 시작해 길게 감속한다(헤더 접힘 600ms). 작은 등장은 150ms. 테마에서 바꾸지 않는다. */
+:root {
+  --duration-morph: 600ms;
+  --duration-fast: 150ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-morph: 0ms;
+    --duration-fast: 0ms;
+  }
+}
+
+@theme {
+  --ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.15, 1);
+  --animate-drop: drop var(--duration-fast) var(--ease-enter);
+
+  @keyframes drop {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--bg-page);
+    color: var(--fg-default);
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-body, var(--font-sans));
+    font-size: 16px;
+    line-height: 26px;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 키보드 포커스: 2px stroke-focus 실선, 2px 간격 */
+  a:focus-visible,
+  button:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--stroke-focus);
+    outline-offset: 2px;
+  }
+  /* 헤더 아래로 목차 이동이 가려지지 않게 */
+  :target {
+    scroll-margin-top: 96px;
+  }
+}
+
+/* 본문. 글 HTML(markdown 변환 결과)에도 같은 규칙이 걸리도록 태그 선택자로 적는다. */
+@layer components {
+  .lbs-prose {
+    max-width: 70ch;
+    font-size: 17px;
+    line-height: 30px;
+    color: var(--fg-default);
+  }
+  .lbs-prose > * + * {
+    margin-top: calc(var(--spacing) * 5);
+  }
+  .lbs-prose > :first-child {
+    margin-top: 0;
+  }
+  .lbs-prose h2 {
+    margin: calc(var(--spacing) * 10) 0 0;
+    font-size: 28px;
+    line-height: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .lbs-prose h3 {
+    margin: calc(var(--spacing) * 8) 0 0;
+    font-size: 21px;
+    line-height: 30px;
+    font-weight: 700;
+  }
+  .lbs-prose h4 {
+    margin: calc(var(--spacing) * 6) 0 0;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 700;
+  }
+  .lbs-prose hr {
+    margin: calc(var(--spacing) * 8) 0;
+    border: 0;
+    border-top: 1px solid var(--stroke-subtle);
+  }
+  .lbs-prose mark {
+    background: var(--bg-informative-weak);
+    color: inherit;
+    padding: 0 2px;
+  }
+  .lbs-prose u {
+    text-underline-offset: 3px;
+  }
+  /* 표: 가로로 넘치면 표만 스크롤한다. 열 정렬(:---:)은 셀의 text-align 스타일이 맡는다 */
+  .lbs-prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .lbs-prose th,
+  .lbs-prose td {
+    padding: 8px 14px;
+    border: 1px solid var(--stroke-default);
+    text-align: left;
+  }
+  .lbs-prose th {
+    background: var(--bg-subtle);
+    font-weight: 700;
+  }
+  .lbs-prose input[type="checkbox"] {
+    margin-right: 6px;
+  }
+  .lbs-prose sup,
+  .lbs-prose sub {
+    font-size: 0.75em;
+    line-height: 0;
+  }
+  .lbs-prose img {
+    display: block;
+    height: auto;
+  }
+  .lbs-prose a {
+    color: var(--fg-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .lbs-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-subtle);
+  }
+  /* 코드 블록 안의 code는 인라인 코드 모양을 받지 않는다 */
+  .lbs-prose pre code {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    font-size: inherit;
+  }
+  .lbs-prose blockquote {
+    margin: calc(var(--spacing) * 5) 0 0;
+    padding-left: calc(var(--spacing) * 5);
+    border-left: 3px solid var(--stroke-default);
+    color: var(--fg-muted);
+  }
+  .lbs-prose ul,
+  .lbs-prose ol {
+    margin: calc(var(--spacing) * 5) 0 0;
+    padding-left: 1.4em;
+  }
+  .lbs-prose ul {
+    list-style: disc;
+  }
+  .lbs-prose ol {
+    list-style: decimal;
+  }
+  .lbs-prose li + li {
+    margin-top: 6px;
+  }
+  .lbs-prose img {
+    max-width: 100%;
+    border-radius: var(--radius-xl);
+  }
+}

@@ -1,0 +1,129 @@
+/* 블로그 테마의 토큰이다. 값을 바꿔 쓰면 된다. */
+:root,
+[data-theme] {
+  color-scheme: light dark;
+  --bg-page: light-dark(#f7f7f6, #121314);
+  --bg-article: light-dark(#ffffff, #16171b);
+  --bg-subtle: light-dark(#f3f4f5, #2b2e35);
+  --bg-subtle-hover: light-dark(#eeeff1, #393d46);
+  --bg-code: light-dark(#f7f8f9, #1d2025);
+  --bg-media: light-dark(#1a1c20, #1d2025);
+  --fg-default: light-dark(#1a1c20, #f3f4f5);
+  --fg-muted: light-dark(#555d6d, #b0b3ba);
+  --fg-subtle: light-dark(#6b717d, #9a9fa8);
+  --fg-on-media: light-dark(#b0b3ba, #9a9fa8);
+  --stroke-subtle: light-dark(#e4e5e8, #2b2e35);
+  --stroke-default: light-dark(#dcdee3, #393d46);
+  --stroke-focus: light-dark(#2f6fe4, #6c9cf5);
+  --accent: light-dark(#ff6f0f, #ff8a3d);
+  --bg-nav-pill: rgba(255, 255, 255, 0.09);
+  --bg-nav-pill-on-dark: rgba(255, 255, 255, 0.09);
+  --fg-on-dark: #ffffff;
+  --bg-floating: light-dark(#ffffff, #2b2e35);
+  --fg-link: light-dark(#1a1c20, #f3f4f5);
+  --fg-informative: light-dark(#2a5bc8, #7fb2f0);
+  --bg-informative-weak: light-dark(#ebf1fd, #14243a);
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Tailwind 기본 팔레트(red-500 등)는 끈다. 색은 아래 토큰으로만 쓴다. */
+@theme {
+  --color-*: initial;
+}
+
+@theme inline {
+  --color-bg-page: var(--bg-page);
+  --color-bg-article: var(--bg-article);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-subtle-hover: var(--bg-subtle-hover);
+  --color-bg-code: var(--bg-code);
+  --color-bg-media: var(--bg-media);
+  --color-fg-default: var(--fg-default);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-on-media: var(--fg-on-media);
+  --color-stroke-subtle: var(--stroke-subtle);
+  --color-stroke-default: var(--stroke-default);
+  --color-stroke-focus: var(--stroke-focus);
+  --color-accent: var(--accent);
+  --color-bg-nav-pill: var(--bg-nav-pill);
+  --color-bg-nav-pill-on-dark: var(--bg-nav-pill-on-dark);
+  --color-fg-on-dark: var(--fg-on-dark);
+  --color-bg-floating: var(--bg-floating);
+  --color-fg-link: var(--fg-link);
+  --color-fg-informative: var(--fg-informative);
+  --color-bg-informative-weak: var(--bg-informative-weak);
+}
+
+@theme {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", Pretendard, "Segoe UI", Roboto,
+    "Noto Sans KR", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --text-hero: 72px;
+  --text-hero--line-height: 80px;
+  --text-hero--font-weight: 800;
+  --text-hero--letter-spacing: -0.04em;
+  --text-post-title: 56px;
+  --text-post-title--line-height: 64px;
+  --text-post-title--font-weight: 700;
+  --text-post-title--letter-spacing: -0.03em;
+  --text-featured-title: 40px;
+  --text-featured-title--line-height: 48px;
+  --text-featured-title--font-weight: 700;
+  --text-featured-title--letter-spacing: -0.03em;
+  --text-article-h2: 28px;
+  --text-article-h2--line-height: 38px;
+  --text-article-h2--font-weight: 700;
+  --text-article-h2--letter-spacing: -0.02em;
+  --text-article-h3: 21px;
+  --text-article-h3--line-height: 30px;
+  --text-article-h3--font-weight: 700;
+  --text-article-body: 17px;
+  --text-article-body--line-height: 30px;
+  --text-article-body--font-weight: 400;
+  --text-code: 14px;
+  --text-code--line-height: 24px;
+  --text-code--font-weight: 400;
+  --text-card-title: 20px;
+  --text-card-title--line-height: 28px;
+  --text-card-title--font-weight: 700;
+  --text-card-title--letter-spacing: -0.02em;
+  --text-site-name: 24px;
+  --text-site-name--line-height: 32px;
+  --text-site-name--font-weight: 700;
+  --text-site-name--letter-spacing: -0.03em;
+  --text-lead: 18px;
+  --text-lead--line-height: 28px;
+  --text-lead--font-weight: 400;
+  --text-menu: 16px;
+  --text-menu--line-height: 24px;
+  --text-menu--font-weight: 400;
+  --text-meta: 14px;
+  --text-meta--line-height: 20px;
+  --text-meta--font-weight: 400;
+  --text-small: 13px;
+  --text-small--line-height: 18px;
+  --text-small--font-weight: 400;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+  --text-label--font-weight: 400;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* 간격 s{n}은 Tailwind 기본 간격과 같다(p-4 = s4 = 16px, p-18 = s18 = 72px). */
+  --container-page-max: 1240px;
+  --container-article-max: 900px;
+  --container-sidebar: 216px;
+  --container-toc: 220px;
+}

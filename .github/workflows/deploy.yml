@@ -1,0 +1,54 @@
+name: 블로그 배포
+
+# 글을 올릴 때(main에 push)와 한 시간마다 빌드해서 GitHub Pages에 배포한다.
+# 한 시간마다 다시 빌드하는 이유: 예약 발행한 글의 시각이 지나면 다음 빌드에서 나타나기 때문이다(#36).
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나만 한다. 진행 중인 배포를 끊지 않고 다음 배포가 기다린다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - run: npm ci
+      - run: npm run build
+        env:
+          # 프로젝트 사이트는 "/<저장소>", 사용자 사이트와 사용자 도메인은 ""
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          NEXT_TELEMETRY_DISABLED: '1'
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
