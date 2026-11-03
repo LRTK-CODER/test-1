@@ -8,6 +8,11 @@
       "type": "page",
       "label": "소개",
       "slug": "about"
+    },
+    {
+      "type": "category",
+      "label": "노트",
+      "slug": "notes"
     }
   ]
 }
