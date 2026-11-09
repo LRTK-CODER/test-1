@@ -1,0 +1,53 @@
+{
+  "id": "default",
+  "name": "기본",
+  "version": "1.0.0",
+  "contract": "1.0",
+  "settings": [
+    {
+      "key": "accent",
+      "label": "강조색",
+      "group": "site",
+      "type": "color",
+      "default": "#ff6f0f",
+      "css": "--accent"
+    },
+    {
+      "key": "imageRadius",
+      "label": "모서리 둥글기",
+      "group": "site",
+      "type": "number",
+      "default": 20,
+      "min": 0,
+      "max": 48,
+      "step": 1,
+      "unit": "px",
+      "css": "--radius-xl"
+    },
+    {
+      "key": "bodyFont",
+      "label": "본문 서체",
+      "group": "site",
+      "type": "select",
+      "default": "system",
+      "css": "--font-body",
+      "options": [
+        {
+          "value": "system",
+          "label": "시스템 + Pretendard",
+          "css": "-apple-system, BlinkMacSystemFont, \"Apple SD Gothic Neo\", Pretendard, \"Segoe UI\", Roboto, \"Noto Sans KR\", sans-serif"
+        },
+        {
+          "value": "noto-sans-kr",
+          "label": "Noto Sans KR",
+          "css": "\"Noto Sans KR\", sans-serif"
+        },
+        {
+          "value": "ibm-plex-sans-kr",
+          "label": "IBM Plex Sans KR",
+          "css": "\"IBM Plex Sans KR\", sans-serif"
+        }
+      ]
+    }
+  ]
+}

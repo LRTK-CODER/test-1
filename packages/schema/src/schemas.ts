@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import { type Slug, SlugSchema } from './slug';
 
-/** 블로그 저장소가 따르는 콘텐츠 스키마 버전. 파일 모양이 호환되지 않게 바뀔 때만 올린다. */
-export const SCHEMA_VERSION = 1;
+/** 새 블로그 저장소가 따르는 콘텐츠 스키마 버전. 파일 모양이 호환되지 않게 바뀔 때만 올린다. */
+export const SCHEMA_VERSION = 2;
+
+/** 읽을 수 있는 가장 낮은 스키마 버전. 1은 템플릿 0.1 블로그로, 2로 옮기는 작업 전까지 읽는다. */
+export const MIN_SCHEMA_VERSION = 1;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
@@ -42,6 +45,7 @@ export const SiteInfoSchema = z.object({
   name: text(60),
   tagline: text(120).optional(),
   description: text(300).optional(),
+  shareImage: MediaPathSchema.optional(),
   language: z
     .string()
     .refine((value) => /^[a-z]{2}(?:-[A-Z]{2})?$/.test(value), { params: { rule: 'language' } }),
@@ -104,7 +108,7 @@ export const MediaLibrarySchema = z.strictObject({
 });
 export type MediaLibrary = z.infer<typeof MediaLibrarySchema>;
 
-/* ---------- theme/tokens.json ---------- */
+/* ---------- theme/tokens.json (스키마 1, 템플릿 0.1 블로그에만 있다) ---------- */
 
 export const BODY_FONT_IDS = ['system', 'noto-sans-kr', 'ibm-plex-sans-kr'] as const;
 export type BodyFont = (typeof BODY_FONT_IDS)[number];
@@ -116,6 +120,27 @@ export const ThemeTokensSchema = z.object({
   imageRadius: z.number().int().min(0).max(48),
   bodyFont: z.enum(BODY_FONT_IDS),
 });
+
+/* ---------- content/theme.json (스키마 2) ---------- */
+
+const THEME_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/;
+const themeIdText = z
+  .string()
+  .refine((value) => THEME_ID_PATTERN.test(value), { params: { rule: 'themeId' } });
+
+export const ThemeIdSchema = themeIdText.brand<'ThemeId'>();
+export type ThemeId = z.infer<typeof ThemeIdSchema>;
+export const DEFAULT_THEME_ID = 'default' as ThemeId;
+
+const SettingValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+export type SettingValue = z.infer<typeof SettingValueSchema>;
+
+/** 쓰는 테마와 테마별 설정값. 설정값이 테마가 정한 항목에 맞는지는 블로그 템플릿이 검사한다. */
+export const ThemeStateSchema = z.strictObject({
+  active: ThemeIdSchema,
+  settings: z.record(themeIdText, z.record(z.string(), SettingValueSchema)).default({}),
+});
+export type ThemeState = z.infer<typeof ThemeStateSchema>;
 
 /* ---------- content/posts/<slug>.md, content/pages/<slug>.md ---------- */
 

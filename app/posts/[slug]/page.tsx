@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
-import { loadBlog } from '../../../src/blog';
-import { PostView } from '../../../src/post-view';
+import { loadTheme } from '../../../src/active-theme';
+import { loadBlog, publishedAt } from '../../../src/blog';
 import { atLeastOne, RedirectPage, redirectSlugs, redirectTarget } from '../../../src/redirect';
+import { ThemeScreen } from '../../../src/screen';
+import { postDescription, shareMetadata } from '../../../src/share';
+import { postProps } from '../../../src/theme-props';
 
 export const dynamicParams = false;
 
@@ -16,8 +19,19 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = loadBlog().posts.find((p) => p.slug === slug);
-  return post ? { title: post.title, description: post.summary } : { title: '이동 중이에요' };
+  const blog = loadBlog();
+  const post = blog.posts.find((p) => p.slug === slug);
+  if (!post) return { title: '이동 중이에요' };
+  return {
+    title: post.title,
+    ...shareMetadata(blog, {
+      title: post.title,
+      description: postDescription(blog, post),
+      route: { type: 'post', slug: post.slug },
+      image: post.cover,
+      article: { publishedTime: publishedAt(post) },
+    }),
+  };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
@@ -29,6 +43,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     if (!to) notFound();
     return <RedirectPage to={to} />;
   }
-
-  return <PostView blog={blog} post={post} />;
+  const { theme, context } = loadTheme();
+  return <ThemeScreen theme={theme} screen={{ type: 'post', props: postProps(context, post) }} />;
 }

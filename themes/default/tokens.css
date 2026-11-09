@@ -18,6 +18,7 @@
   --accent: light-dark(#ff6f0f, #ff8a3d);
   --bg-nav-pill: rgba(255, 255, 255, 0.09);
   --bg-nav-pill-on-dark: rgba(255, 255, 255, 0.09);
+  --stroke-nav-pill-on-dark: rgba(255, 255, 255, 0.09);
   --fg-on-dark: #ffffff;
   --bg-floating: light-dark(#ffffff, #2b2e35);
   --fg-link: light-dark(#1a1c20, #f3f4f5);
@@ -53,6 +54,7 @@
   --color-accent: var(--accent);
   --color-bg-nav-pill: var(--bg-nav-pill);
   --color-bg-nav-pill-on-dark: var(--bg-nav-pill-on-dark);
+  --color-stroke-nav-pill-on-dark: var(--stroke-nav-pill-on-dark);
   --color-fg-on-dark: var(--fg-on-dark);
   --color-bg-floating: var(--bg-floating);
   --color-fg-link: var(--fg-link);

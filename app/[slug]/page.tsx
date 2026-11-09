@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
+import { loadTheme } from '../../src/active-theme';
 import { loadBlog } from '../../src/blog';
-import { PageView } from '../../src/page-view';
 import { atLeastOne, RedirectPage, redirectSlugs, redirectTarget } from '../../src/redirect';
+import { ThemeScreen } from '../../src/screen';
+import { pageDescription, shareMetadata } from '../../src/share';
+import { pageProps } from '../../src/theme-props';
 
 export const dynamicParams = false;
 
@@ -16,8 +19,17 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = loadBlog().pages.find((p) => p.slug === slug);
-  return page ? { title: page.title, description: page.summary } : { title: '이동 중이에요' };
+  const blog = loadBlog();
+  const page = blog.pages.find((p) => p.slug === slug);
+  if (!page) return { title: '이동 중이에요' };
+  return {
+    title: page.title,
+    ...shareMetadata(blog, {
+      title: page.title,
+      description: pageDescription(blog, page),
+      route: { type: 'page', slug: page.slug },
+    }),
+  };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
@@ -29,5 +41,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     if (!to) notFound();
     return <RedirectPage to={to} />;
   }
-  return <PageView blog={blog} page={page} />;
+  const { theme, context } = loadTheme();
+  return <ThemeScreen theme={theme} screen={{ type: 'page', props: pageProps(context, page) }} />;
 }

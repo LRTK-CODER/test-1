@@ -1,0 +1,19 @@
+{
+  "name": "@lbs/theme-kit",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./bundle": "./src/bundle.ts"
+  },
+  "dependencies": {
+    "hast-util-to-jsx-runtime": "2.3.6"
+  },
+  "peerDependencies": {
+    "next": "16.4.2",
+    "react": "19.3.1"
+  }
+}

@@ -3,14 +3,18 @@ import { join, relative } from 'node:path';
 import {
   type BasePath,
   type Category,
+  type MediaPath,
   normalizeBasePath,
+  normalizeSiteOrigin,
   type Page,
   type Post,
+  pagesOrigin,
   parseSite,
   publishedPosts,
   type RedirectStub,
   redirectStubs,
   type Site,
+  type SiteOrigin,
   type SourceFile,
   unwrap,
 } from '@lbs/schema';
@@ -25,6 +29,11 @@ import {
 export interface Blog {
   site: Site;
   basePath: BasePath;
+  /**
+   * 사이트 주소의 맨 앞(`https://owner.github.io`). 공유 미리보기의 절대 주소에 쓴다. 알 수 없으면 없다.
+   * 빌드는 `LBS_SITE_ORIGIN`, 없으면 Actions의 `GITHUB_REPOSITORY`에서 만든다.
+   */
+  origin?: SiteOrigin;
   now: Date;
   /** 지금 공개된 글, 최신순. 화면의 어떤 목록도 `site.posts` 대신 이 값을 쓴다. */
   posts: Post[];
@@ -38,11 +47,6 @@ export interface Blog {
    * CMS 미리보기가 저장소의 이미지를 미리 보기 주소로 바꿀 때만 넘긴다.
    */
   imageSrc?: (path: string) => string;
-  /**
-   * 스크립트가 없는 환경(CMS 미리보기)에서 그린다. 스크롤을 읽어 헤더를 바꿀 수 없으므로,
-   * 헤더를 화면에 고정하지 않고 본문 위에 제자리로 그린다.
-   */
-  scriptless?: boolean;
 }
 
 export const NOT_FOUND_SLUG = '404';
@@ -73,12 +77,38 @@ export function readSourceFiles(root: string): SourceFile[] {
   return files;
 }
 
+/** 저장소 루트의 `public/media/` 아래 모든 파일의 저장소 경로(`public/media/2026/10/a.png`) */
+export function readMediaRepoPaths(root: string): Set<string> {
+  const paths = new Set<string>();
+  try {
+    for (const entry of readdirSync(join(root, 'public/media'), {
+      recursive: true,
+      withFileTypes: true,
+    })) {
+      if (entry.isFile())
+        paths.add(relative(root, join(entry.parentPath, entry.name)).split(/[\\/]/).join('/'));
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  return paths;
+}
+
+export interface BuildBlogOptions {
+  /** 저장소의 파일 경로. 주면 대표 이미지와 기본 공유 이미지 파일이 있는지 검사한다. */
+  repoPaths?: ReadonlySet<string>;
+  /** 사이트 주소의 맨 앞. `https://owner.github.io` */
+  origin?: string;
+}
+
 export function buildBlog(
   files: Iterable<SourceFile>,
   basePathInput: string | undefined,
   now: Date,
+  options: BuildBlogOptions = {},
 ): Blog {
-  return blogFromSite(unwrap(parseSite(files, now)), basePathInput, now);
+  const site = unwrap(parseSite(files, now, { repoPaths: options.repoPaths }));
+  return { ...blogFromSite(site, basePathInput, now), origin: normalizeSiteOrigin(options.origin) };
 }
 
 /** 이미 해석한 사이트로 `Blog`를 만든다. 빌드와 CMS 미리보기가 같은 규칙(공개 여부, 이동 기록)을 쓴다. */
@@ -103,11 +133,11 @@ export function loadBlog(): Blog {
   if (cached) return cached;
   const built = process.env.LBS_BUILD_TIME;
   const now = built ? new Date(built) : new Date();
-  cached = buildBlog(
-    readSourceFiles(process.env.LBS_ROOT || process.cwd()),
-    process.env.NEXT_PUBLIC_BASE_PATH,
-    now,
-  );
+  const root = process.env.LBS_ROOT || process.cwd();
+  cached = buildBlog(readSourceFiles(root), process.env.NEXT_PUBLIC_BASE_PATH, now, {
+    repoPaths: readMediaRepoPaths(root),
+    origin: process.env.LBS_SITE_ORIGIN?.trim() || pagesOrigin(process.env.GITHUB_REPOSITORY),
+  });
   return cached;
 }
 
@@ -116,6 +146,11 @@ export function categoryOf(blog: Blog, post: Post): Category {
   // parseSite가 모든 글의 카테고리가 목록에 있는지 검사한다.
   if (!category) throw new Error(`카테고리 '${post.category}'를 찾을 수 없어요.`);
   return category;
+}
+
+/** 대표 이미지의 대체 글자. `content/media.json`에 없으면 빈 글자다. */
+export function coverAlt(blog: Blog, path: MediaPath): string {
+  return blog.site.media.items[path]?.alt ?? '';
 }
 
 export function publishedAt(post: Post): string {

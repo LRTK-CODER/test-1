@@ -6,6 +6,7 @@ import {
   type Extra,
   ManifestSchema,
   MediaLibrarySchema,
+  MIN_SCHEMA_VERSION,
   NavigationSchema,
   PAGE_KEYS,
   type Page,
@@ -17,6 +18,7 @@ import {
   RedirectsSchema,
   SCHEMA_VERSION,
   SiteInfoSchema,
+  ThemeStateSchema,
   ThemeTokensSchema,
 } from './schemas';
 import { isSlug, type Slug, slugify } from './slug';
@@ -275,7 +277,7 @@ function normalizeFront(front: Record<string, unknown>): Record<string, unknown>
 const MANIFEST_PATH = 'lbs.json';
 
 function versionIssues({ schemaVersion: version }: { schemaVersion: number }): ContentIssue[] {
-  if (version === SCHEMA_VERSION) return [];
+  if (version >= MIN_SCHEMA_VERSION && version <= SCHEMA_VERSION) return [];
   const message =
     version > SCHEMA_VERSION
       ? `이 블로그는 콘텐츠 스키마 ${version}버전으로 만들어졌어요. 지금 LBS는 ${SCHEMA_VERSION}버전까지 읽을 수 있어요. LBS를 새 버전으로 올려 주세요.`
@@ -291,6 +293,11 @@ export function assertSupportedVersion(manifest: { schemaVersion: number }): voi
 
 /* ---------- 블로그 저장소의 파일 배치 ---------- */
 
+/** CMS와 블로그 빌드가 읽어서 해석하는 텍스트 파일인지. 미디어, 테마 코드, 워크플로는 아니다. */
+export function isSiteSource(path: string): boolean {
+  return path === MANIFEST_PATH || path.startsWith('content/') || path === 'theme/tokens.json';
+}
+
 /**
  * 블로그 저장소에서 CMS와 블로그가 함께 읽고 쓰는 파일. 경로, 읽기, 쓰기를 이 표 한 곳에서 정한다.
  * 미디어 파일 자체는 `public/media/<연>/<월>/<파일>`에 있고, 콘텐츠에서는 `/media/...`로 가리킨다.
@@ -302,7 +309,10 @@ export const blogFiles = {
   navigation: jsonFile('content/navigation.json', NavigationSchema),
   redirects: jsonFile('content/redirects.json', RedirectsSchema),
   media: jsonFile('content/media.json', MediaLibrarySchema),
-  theme: extensibleJsonFile('theme/tokens.json', ThemeTokensSchema),
+  /** 스키마 1(템플릿 0.1) 블로그의 `theme/tokens.json`. 스키마 2에는 없다. */
+  legacyTheme: extensibleJsonFile('theme/tokens.json', ThemeTokensSchema),
+  /** 스키마 2 블로그의 쓰는 테마와 테마별 설정값. */
+  themeState: jsonFile('content/theme.json', ThemeStateSchema),
   posts: markdownCollection<Post>('content/posts', PostFrontMatterSchema, POST_KEYS),
   pages: markdownCollection<Page>(
     'content/pages',

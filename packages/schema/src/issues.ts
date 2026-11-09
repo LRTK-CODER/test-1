@@ -47,6 +47,8 @@ const RULE_MESSAGES = {
     `${field} 값이 언어 코드가 아니에요(${show(input)}). ko나 en-US처럼 써 주세요.`,
   semver: (field: string, input: unknown) =>
     `${field} 값이 버전 형식이 아니에요(${show(input)}). 0.1.0처럼 숫자 세 개를 점으로 이어 써 주세요.`,
+  themeId: (field: string, input: unknown) =>
+    `${field} 값이 테마 이름 규칙에 맞지 않아요(${show(input)}). 영문 소문자, 숫자, 하이픈(-)으로 2자에서 40자까지 쓰고 영문 소문자나 숫자로 시작해 주세요.`,
 } satisfies Record<string, (field: string, input: unknown) => string>;
 
 export type Rule = keyof typeof RULE_MESSAGES;

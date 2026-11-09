@@ -38,6 +38,8 @@ jobs:
         env:
           # 프로젝트 사이트는 "/<저장소>", 사용자 사이트와 사용자 도메인은 ""
           NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # 공유 미리보기의 절대 주소에 쓰는 사이트 주소의 맨 앞. 사용자 도메인도 반영된다.
+          LBS_SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
           NEXT_TELEMETRY_DISABLED: '1'
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

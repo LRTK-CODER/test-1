@@ -1,5 +1,5 @@
 /*
- * 블로그 테마의 스타일 진입점이다. app/globals.css가 Tailwind와 함께 이 파일을 불러온다.
+ * 기본 테마의 스타일 진입점이다. 빌드 전에 만드는 .lbs/theme.css가 Tailwind와 함께 이 파일을 불러온다.
  * 토큰(tokens.css)만 바꾸면 색, 글자, 둥글기가 바뀐다. 더 바꾸려면 컴포넌트를 고친다.
  */
 @import "./tokens.css";

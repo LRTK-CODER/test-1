@@ -1,23 +1,21 @@
 import { BODY_HTML_ALLOWLIST } from '@lbs/schema';
-import type { Element, Root } from 'hast';
-import { toJsxRuntime } from 'hast-util-to-jsx-runtime';
-import { Children, Fragment, isValidElement, type ReactElement, type ReactNode } from 'react';
-import { jsx, jsxs } from 'react/jsx-runtime';
+import type { BodyData, TocItem } from '@lbs/theme-kit';
+import type { Element, Nodes, Root } from 'hast';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema, type Options as SanitizeSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
-import { CodeBlock, type TocItem } from '../theme';
 
 /**
- * 글 본문(Markdown)을 React 요소로 바꾼다. 결정 #17: CommonMark + GFM이고, Markdown에 없는 서식이 든
+ * 글 본문(Markdown)을 테마에 넘기는 본문 트리(`BodyData`)로 바꾼다. 테마는 `Content`로 그린다. 결정 #17: CommonMark + GFM이고, Markdown에 없는 서식이 든
  * 문단만 한 줄 HTML이다. 순서는 다음과 같다.
  * 1. Markdown을 읽고(GFM 표·체크박스·취소선·각주), HTML 조각은 그대로 둔 채 HTML 트리로 바꾼다.
  * 2. HTML 조각을 트리로 풀고, `BODY_HTML_ALLOWLIST`에 없는 태그와 속성(script, on* 속성, javascript: 주소)을 지운다.
  * 3. 허용한 `style`도 문단 정렬 값만 남긴다.
  * 4. 제목에 id를 달고(h2·h3), 사이트 안 링크와 이미지 주소에 basePath를 붙인다.
+ * 5. 원문 위치(`position`)를 지운다. 테마에는 필요 없고, 트리를 JSON으로 옮길 때 크기만 늘린다.
  */
 
 const CLOBBER_PREFIX = 'user-content-';
@@ -89,6 +87,7 @@ function finish(basePath: string, toc: TocItem[], imageSrc?: (path: string) => s
         delete props.style;
       if (el.tagName === 'h2' || el.tagName === 'h3') {
         // 각주 머리말처럼 화면에 보이지 않는 제목(sr-only)은 목차에 넣지 않는다.
+        // 이 파일에 'sr-only' 글자가 있어야 Tailwind가 각주 머리말을 숨기는 클래스를 만든다.
         const hidden = Array.isArray(props.className) && props.className.includes('sr-only');
         if (!hidden) {
           const label = textOf(el).trim();
@@ -112,32 +111,21 @@ function finish(basePath: string, toc: TocItem[], imageSrc?: (path: string) => s
   };
 }
 
-/** 코드 블록은 테마의 CodeBlock으로 그린다. 각주 머리말은 sr-only 클래스로 숨긴다(이 글자가 있어야 Tailwind가 클래스를 만든다). */
-function Pre({ children }: { children?: ReactNode }) {
-  const child = Children.toArray(children)[0];
-  if (!isValidElement(child)) return <pre>{children}</pre>;
-  const code = child as ReactElement<{ className?: string; children?: ReactNode }>;
-  const language = /language-(\S+)/.exec(code.props.className ?? '')?.[1];
-  const text = Children.toArray(code.props.children).join('').replace(/\n$/, '');
-  return <CodeBlock code={text} language={language ?? 'text'} />;
-}
-
-export interface RenderedMarkdown {
-  content: ReactNode;
-  /** h2 기준 목차 */
-  toc: TocItem[];
+function stripPositions(node: Nodes) {
+  delete node.position;
+  if ('children' in node) for (const child of node.children) stripPositions(child);
 }
 
 /**
  * `basePath`는 `/저장소` 또는 `''`. 본문의 `/media/...` 이미지와 `/posts/...` 같은 사이트 안 링크에 붙인다.
  * `<a href>`와 `<img src>`는 Next.js가 basePath를 붙여 주지 않기 때문이다.
  */
-export function renderMarkdown(
+export function renderBody(
   source: string,
   basePath: string,
   /** 본문 이미지 주소를 직접 정한다(CMS 미리보기). 주면 basePath를 이미지에 붙이지 않는다. */
   options: { imageSrc?: (path: string) => string } = {},
-): RenderedMarkdown {
+): BodyData {
   const toc: TocItem[] = [];
   const processor = unified()
     .use(remarkParse)
@@ -152,6 +140,6 @@ export function renderMarkdown(
     .use(rehypeSanitize, schema)
     .use(finish(basePath, toc, options.imageSrc));
   const tree = processor.runSync(processor.parse(source)) as Root;
-  const content = toJsxRuntime(tree, { Fragment, jsx, jsxs, components: { pre: Pre } });
-  return { content, toc };
+  stripPositions(tree);
+  return { tree, toc };
 }

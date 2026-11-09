@@ -5,6 +5,10 @@ import type { Slug } from './slug';
 /** 블로그 안의 주소 하나. 경로 모양은 `routePath`가 한 곳에서 정한다. */
 export type Route = { type: 'home' } | { type: 'post' | 'category' | 'page'; slug: Slug };
 
+/** 블로그 템플릿이 피드와 사이트맵을 내보내는 사이트 안의 경로. CMS가 같은 주소를 보여 준다. */
+export const FEED_PATH = '/feed.xml';
+export const SITEMAP_PATH = '/sitemap.xml';
+
 /** `''` 또는 `/저장소-이름`처럼 `/`로 시작하고 `/`로 끝나지 않는 값. */
 export type BasePath = string & { readonly __brand: 'BasePath' };
 
@@ -25,6 +29,48 @@ export function normalizeBasePath(input: string | undefined): BasePath {
       },
     ]);
   return (trimmed ? `/${trimmed}` : '') as BasePath;
+}
+
+/** `https://owner.github.io`처럼 주소 맨 앞(scheme과 host). 경로와 끝의 `/`가 없다. */
+export type SiteOrigin = string & { readonly __brand: 'SiteOrigin' };
+
+/**
+ * 사이트 주소의 맨 앞을 `https://host` 모양으로 맞춘다. 빈 값은 undefined다.
+ * 경로, 쿼리, 해시가 붙은 값(`https://x.io/repo`)은 기준 경로(basePath)와 섞이므로 ContentError를 던진다.
+ */
+export function normalizeSiteOrigin(input: string | undefined): SiteOrigin | undefined {
+  const trimmed = (input ?? '').trim();
+  if (!trimmed) return undefined;
+  let url: URL | undefined;
+  try {
+    url = new URL(trimmed);
+  } catch {}
+  if (
+    !url ||
+    !/^https?:$/.test(url.protocol) ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash ||
+    url.username
+  )
+    throw new ContentError([
+      {
+        file: 'siteOrigin',
+        message: `사이트 주소 '${input}'는 https://owner.github.io처럼 주소의 맨 앞만 써야 해요. 경로(/저장소)는 basePath로 따로 받아요.`,
+      },
+    ]);
+  return url.origin as SiteOrigin;
+}
+
+/** GitHub Pages가 `owner/repo` 저장소에 주는 주소의 맨 앞. 사용자 사이트와 프로젝트 사이트 모두 `https://owner.github.io`다. */
+export function pagesOrigin(repository: string | undefined): SiteOrigin | undefined {
+  const owner = /^([A-Za-z0-9-]+)\/[A-Za-z0-9._-]+$/.exec((repository ?? '').trim())?.[1];
+  return owner ? (`https://${owner.toLowerCase()}.github.io` as SiteOrigin) : undefined;
+}
+
+/** 사이트 안의 경로(`/media/…`, `/posts/x/`)를 공유 미리보기와 피드가 쓰는 절대 주소로 만든다. */
+export function absoluteUrl(origin: SiteOrigin, basePath: BasePath, path: string): string {
+  return `${origin}${withBasePath(path, basePath)}`;
 }
 
 const PREFIX = { post: '/posts/', category: '/category/', page: '/' } as const;

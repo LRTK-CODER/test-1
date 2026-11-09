@@ -15,7 +15,7 @@ const config: NextConfig = {
   distDir: process.env.LBS_OUT_DIR || undefined,
   // 빌드 시각을 한 번만 정한다. 메뉴·이동 기록·글 목록이 모두 같은 시각으로 공개 여부를 판단한다.
   env: { LBS_BUILD_TIME: process.env.LBS_NOW || new Date().toISOString() },
-  transpilePackages: ['@lbs/schema'],
+  transpilePackages: ['@lbs/schema', '@lbs/theme-kit'],
   devIndicators: false,
   agentRules: false,
 };

@@ -1,19 +1,19 @@
-import { featuredPost, loadBlog } from '../src/blog';
-import { ListView } from '../src/list-view';
+import { loadTheme } from '../src/active-theme';
+import { loadBlog } from '../src/blog';
+import { ThemeScreen } from '../src/screen';
+import { shareMetadata, siteDescription } from '../src/share';
+import { homeProps } from '../src/theme-props';
 
-/** 홈: 소개, 추천 글 하나, 카테고리 탭, 나머지 글 목록 */
-export default function Page() {
+export function generateMetadata() {
   const blog = loadBlog();
-  const { info } = blog.site;
-  const featured = featuredPost(blog);
-  return (
-    <ListView
-      blog={blog}
-      current={{ type: 'home' }}
-      title={info.tagline ?? info.name}
-      lead={info.description}
-      featured={featured}
-      posts={blog.posts.filter((post) => post !== featured)}
-    />
-  );
+  return shareMetadata(blog, {
+    title: blog.site.info.name,
+    description: siteDescription(blog),
+    route: { type: 'home' },
+  });
+}
+
+export default function Page() {
+  const { theme, context } = loadTheme();
+  return <ThemeScreen theme={theme} screen={{ type: 'home', props: homeProps(context) }} />;
 }

@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
+import { loadTheme } from '../../../src/active-theme';
 import { loadBlog } from '../../../src/blog';
-import { ListView } from '../../../src/list-view';
 import { atLeastOne, RedirectPage, redirectSlugs, redirectTarget } from '../../../src/redirect';
+import { ThemeScreen } from '../../../src/screen';
+import { shareMetadata, siteDescription } from '../../../src/share';
+import { categoryProps } from '../../../src/theme-props';
 
 export const dynamicParams = false;
 
@@ -16,8 +19,17 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const category = loadBlog().site.categories.items.find((item) => item.slug === slug);
-  return { title: category?.name ?? '이동 중이에요' };
+  const blog = loadBlog();
+  const category = blog.site.categories.items.find((item) => item.slug === slug);
+  if (!category) return { title: '이동 중이에요' };
+  return {
+    title: category.name,
+    ...shareMetadata(blog, {
+      title: category.name,
+      description: siteDescription(blog),
+      route: { type: 'category', slug: category.slug },
+    }),
+  };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
@@ -29,12 +41,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     if (!to) notFound();
     return <RedirectPage to={to} />;
   }
+  const { theme, context } = loadTheme();
   return (
-    <ListView
-      blog={blog}
-      current={{ type: 'category', slug }}
-      title={category.name}
-      posts={blog.posts.filter((post) => post.category === slug)}
+    <ThemeScreen
+      theme={theme}
+      screen={{ type: 'category', props: categoryProps(context, category) }}
     />
   );
 }

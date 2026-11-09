@@ -259,7 +259,7 @@ export function SiteHeader({
       <header
         data-collapsed={isCollapsed}
         data-tone={resolvedTone}
-        className={`group @container top-0 inset-x-0 z-1000 [--btn-bg:var(--bg-subtle)] [--header-fg:var(--fg-default)] [--mark-fg:var(--bg-page)] [--bar-bg:var(--bg-page)] [--bar-stroke:var(--stroke-subtle)] [--pill-bg:var(--bg-nav-pill)] data-[tone=dark]:[--btn-bg:var(--bg-nav-pill-on-dark)] data-[tone=dark]:[--bar-bg:var(--bg-media)] data-[tone=dark]:[--bar-stroke:var(--bg-nav-pill-on-dark)] data-[tone=dark]:[--header-fg:var(--fg-on-dark)] data-[tone=dark]:[--mark-fg:var(--bg-media)] data-[tone=dark]:[--pill-bg:var(--bg-nav-pill-on-dark)] ${
+        className={`group @container top-0 inset-x-0 z-1000 [--btn-bg:var(--bg-subtle)] [--header-fg:var(--fg-default)] [--mark-fg:var(--bg-page)] [--bar-bg:var(--bg-page)] [--bar-stroke:var(--stroke-subtle)] [--pill-bg:var(--bg-nav-pill)] data-[tone=dark]:[--btn-bg:var(--bg-nav-pill-on-dark)] data-[tone=dark]:[--bar-bg:var(--bg-media)] data-[tone=dark]:[--bar-stroke:var(--stroke-nav-pill-on-dark)] data-[tone=dark]:[--header-fg:var(--fg-on-dark)] data-[tone=dark]:[--mark-fg:var(--bg-media)] data-[tone=dark]:[--pill-bg:var(--bg-nav-pill-on-dark)] ${
           position === 'static' ? 'relative' : 'fixed'
         }`}
       >

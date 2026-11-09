@@ -5,12 +5,16 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "predev": "node src/theme-entry/select.mjs && node src/theme-entry/check.mjs",
     "dev": "next dev",
-    "build": "next build"
+    "prebuild": "node src/theme-entry/select.mjs && node src/theme-entry/check.mjs",
+    "build": "next build",
+    "theme:check": "node src/theme-entry/theme-cli.mjs check",
+    "theme:pack": "node src/theme-entry/theme-cli.mjs pack"
   },
   "dependencies": {
     "@lbs/schema": "file:packages/schema",
-    "hast-util-to-jsx-runtime": "2.3.6",
+    "@lbs/theme-kit": "file:packages/theme-kit",
     "lucide-react": "1.59.0",
     "next": "16.4.2",
     "react": "19.3.1",
@@ -24,10 +28,13 @@
     "unified": "11.0.5"
   },
   "devDependencies": {
+    "@tailwindcss/node": "4.3.3",
+    "@tailwindcss/oxide": "4.3.3",
     "@tailwindcss/postcss": "4.3.3",
     "@types/hast": "3.0.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "lightningcss": "1.32.0",
     "@types/node": "24.19.2",
     "typescript": "7.0.2"
   }

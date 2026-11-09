@@ -12,9 +12,9 @@ import type {
   Redirect,
   Redirects,
   SiteInfo,
-  ThemeTokens,
+  ThemeState,
 } from './schemas';
-import { RESERVED_PAGE_SLUGS } from './schemas';
+import { DEFAULT_THEME_ID, RESERVED_PAGE_SLUGS } from './schemas';
 
 export interface SourceFile {
   /** 저장소 루트 기준 경로. 예: `content/posts/hello.md` */
@@ -29,7 +29,8 @@ export interface Site {
   navigation: Navigation;
   redirects: Redirects;
   media: MediaLibrary;
-  theme: ThemeTokens;
+  /** 쓰는 테마와 테마별 설정값. 스키마 1 블로그는 `theme/tokens.json`을 `default` 테마의 설정값으로 옮겨 담는다. */
+  themeState: ThemeState;
   posts: Post[];
   pages: Page[];
   /** 오류는 아니지만 알려 줄 것. 지금 공개되지 않은 글·페이지를 가리키는 메뉴와 이동 기록이다(#45). CMS는 보여 주기만 하고 저장을 막지 않는다. */
@@ -40,15 +41,24 @@ export interface Site {
   visibleRedirects: Redirect[];
 }
 
-const JSON_KEYS = [
-  'manifest',
-  'info',
-  'categories',
-  'navigation',
-  'redirects',
-  'media',
-  'theme',
-] as const;
+const JSON_KEYS = ['manifest', 'info', 'categories', 'navigation', 'redirects', 'media'] as const;
+
+export interface ParseSiteOptions {
+  /**
+   * 저장소에 있는 모든 파일의 경로(저장소 루트 기준, 예: `public/media/2026/10/a.png`). 주면 발행·예약 글의 대표 이미지와
+   * 사이트의 기본 공유 이미지가 가리키는 파일이 있는지도 검사한다. 안 주면 경로 모양만 검사한다.
+   */
+  repoPaths?: ReadonlySet<string>;
+}
+
+/**
+ * 실패에는 어느 단계에서 멈췄는지가 붙는다. `files`는 파일 하나의 모양이 틀려 파일 사이의 연결을 아직 검사하지 못한 것이고,
+ * `links`는 파일은 모두 읽혔지만 연결이 틀린 것이고, 그때까지 모인 `warnings`(#45)도 함께 돌려준다.
+ */
+export type ParseSiteResult =
+  | { ok: true; value: Site }
+  | { ok: false; issues: ContentIssue[]; stage: 'files' }
+  | { ok: false; issues: ContentIssue[]; stage: 'links'; warnings: ContentIssue[] };
 
 /**
  * 블로그 저장소의 텍스트 파일을 모두 읽어 사이트 하나로 묶는다. 파일마다의 검사에 더해
@@ -57,7 +67,11 @@ const JSON_KEYS = [
  * 오류가 아니라 `warnings`로 돌려주고, `visibleNavigation`과 `visibleRedirects`에서 뺀다(#45).
  * 표에 없는 파일(테마, 워크플로, `.gitkeep` 같은 점 파일)은 무시한다.
  */
-export function parseSite(files: Iterable<SourceFile>, now: Date = new Date()): Result<Site> {
+export function parseSite(
+  files: Iterable<SourceFile>,
+  now: Date = new Date(),
+  options: ParseSiteOptions = {},
+): ParseSiteResult {
   const byPath = new Map<string, string>();
   for (const file of files) byPath.set(file.path, file.text);
 
@@ -82,7 +96,29 @@ export function parseSite(files: Iterable<SourceFile>, now: Date = new Date()): 
       });
     }
     // 스키마 버전이 다르면 다른 파일의 모양도 다를 수 있어 더 읽지 않는다.
-    if (key === 'manifest' && issues.length) return { ok: false, issues };
+    if (key === 'manifest' && issues.length) return { ok: false, issues, stage: 'files' };
+  }
+
+  let themeState: ThemeState | undefined;
+  if (json.manifest && (json.manifest as Manifest).schemaVersion === 1) {
+    const text = byPath.get(blogFiles.legacyTheme.path);
+    if (text === undefined) {
+      issues.push({
+        file: blogFiles.legacyTheme.path,
+        message: '파일이 없어요. 블로그 템플릿에 있는 기본 파일을 다시 넣어 주세요.',
+      });
+    } else {
+      collect(blogFiles.legacyTheme.parse(text), ({ accent, imageRadius, bodyFont }) => {
+        themeState = {
+          active: DEFAULT_THEME_ID,
+          settings: { [DEFAULT_THEME_ID]: { accent, imageRadius, bodyFont } },
+        };
+      });
+    }
+  } else {
+    const text = byPath.get(blogFiles.themeState.path);
+    if (text === undefined) themeState = { active: DEFAULT_THEME_ID, settings: {} };
+    else collect(blogFiles.themeState.parse(text), (value) => (themeState = value));
   }
 
   const posts: Post[] = [];
@@ -95,13 +131,13 @@ export function parseSite(files: Iterable<SourceFile>, now: Date = new Date()): 
       collect(blogFiles.pages.parse(path, text), (page) => pages.push(page));
   }
 
-  if (issues.length) return { ok: false, issues };
-  const base = { ...json, posts, pages } as Omit<
+  if (issues.length) return { ok: false, issues, stage: 'files' };
+  const base = { ...json, themeState, posts, pages } as Omit<
     Site,
     'warnings' | 'visibleNavigation' | 'visibleRedirects'
   >;
-  const { issues: links, warnings, hiddenTargets } = linkIssues(base, now);
-  if (links.length) return { ok: false, issues: links };
+  const { issues: links, warnings, hiddenTargets } = linkIssues(base, now, options.repoPaths);
+  if (links.length) return { ok: false, issues: links, stage: 'links', warnings };
   return {
     ok: true,
     value: {
@@ -138,7 +174,7 @@ function visibleNavItems(
   return out;
 }
 
-function linkIssues(site: BaseSite, now: Date) {
+function linkIssues(site: BaseSite, now: Date, repoPaths?: ReadonlySet<string>) {
   const issues: ContentIssue[] = [];
   const warnings: ContentIssue[] = [];
   /** `post:slug`처럼 있지만 공개되지 않은 대상 */
@@ -203,6 +239,22 @@ function linkIssues(site: BaseSite, now: Date) {
         field: 'category',
         message: `category 값 '${post.category}'가 카테고리 목록에 없어요. 카테고리를 고치거나 새로 만든 뒤 다시 배포하세요.`,
       });
+
+  if (repoPaths) {
+    const missing = (file: string, field: string, path: string) => {
+      const repoPath = `public${path}`;
+      if (!repoPaths.has(repoPath))
+        issues.push({
+          file,
+          field,
+          message: `${field} 값 '${path}'에 해당하는 이미지 파일(${repoPath})이 저장소에 없어요. 이미지를 올리거나, ${field} 항목을 올려 둔 다른 이미지로 바꿔 주세요.`,
+        });
+    };
+    for (const post of site.posts)
+      if (post.status === 'published' && post.cover)
+        missing(blogFiles.posts.pathFor(post.slug), 'cover', post.cover);
+    if (site.info.shareImage) missing(blogFiles.info.path, 'shareImage', site.info.shareImage);
+  }
 
   const checkLink = (link: NavLink, field: string) => {
     if (link.type === 'home' || link.type === 'external') return;
